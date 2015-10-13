@@ -7,9 +7,11 @@ Spicoli is a lightweight server that listens for requests to be sent to Slack an
 To run the server, you will need to `go get` these libraries:
 
 * `github.com/go-martini/martini`
+* `github.com/martini-contrib/binding`
 * `github.com/pborman/uuid`
 
-Respecitvely, these libraries manage the service requests and generate the IDs for new slacker requests.
+
+Respecitvely, these libraries manage the service requests, translate JSON objects to structs, and generate the IDs for new slacker requests.
 
 ## Creating a Slack Request
 The base unit on Spicoli is of course, a `slacker`. A slacker stores all the information you need to communicate with you slack instance, and allows you to customize things like the message, channel, and icon shown for each message.
@@ -51,8 +53,11 @@ Once you have the slacker created, you can now start to use it to send messages 
 If you are happy with the default settings on your slacker, you need only send the __key__ and the __text__ where the key corresponds to the slacker you just created, and the text to the message you want displayed on your slack channel.  If you specify an __action__ (info, success, warn, error), it should change the icon displayed assuming you do not have an override specified in your slacker definition.  
 
 ## Updating a Slacker
+A slacker can also be updated.  All values you submit are the same as in the creation of the slacker and the new values will overwrite those that already exist (except the __key__).
 
     curl -d '{"key":"7361c2a5-2ad6-4ca2-86c4-9349a0a61e1","hook":"https://hooks.slack.com/services/aaaa/bbbb/cccc","slack_data":{"username":"mycoolbot","icon_url":"https://yourdomain.com/icon.png","channel":"mycoolchannel"}}' -X PUT http://yourdomain.com:1966/slack/config/7361c2a5-2ad6-4ca2-86c4-9349a0a61e1
+
+A check will be made to make sure you still are provided the minimum amount of information, and that the key exists.  You do not have to get a new UUID to update an existing slacker.
 
 ## Configuration Files
 These are the files used in running the server.  In an attempt to build a simple process, the goal was to use no database integration so all data is in the form of JSON formatted files that are read upon startup and updated every minute while the server is operational.  NOTE: *All of the configuration files should reside in the same directory as the binary.*
