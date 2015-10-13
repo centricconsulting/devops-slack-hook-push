@@ -27,7 +27,7 @@ type Request struct {
 
 // DeleteRequest will remove the specified key from the Request map.
 func DeleteRequest(id string) {
-    delete(request_keys,id)
+	delete(request_keys, id)
 } // func
 
 // FlushRequests will write all of the outstanding requests to disk.
@@ -85,13 +85,13 @@ func LoadRequests() bool {
 	}
 	log.Printf("info: Loaded %d Requests from disk.", len(request_keys))
 
-    // Check for expired key requests.
-    for key, value := range request_keys {
-        if time.Now().UTC().After(value) {
-            log.Printf("info: Expiring %s", key)
-            delete(request_keys, key)
-        } // if
-    } // for
+	// Check for expired key requests.
+	for key, value := range request_keys {
+		if time.Now().UTC().After(value) {
+			log.Printf("info: Expiring %s", key)
+			delete(request_keys, key)
+		} // if
+	} // for
 
 	// Everything was cool, but the supplied key simply doesn't match anything.
 	return false

@@ -17,6 +17,7 @@ var (
 
 type SlackConfig struct {
 	Key               string       `json:"key"`                 // reqd
+	Name              string       `json:"name"`                // descriptive name
 	UseTelemetri      bool         `json:"use_telemetri"`       // future, defaults false
 	MessageTemplateId string       `json:"message_template_id"` // future
 	Action            string       `json:"action"`              // Success, Error, Warning, Info
@@ -52,9 +53,9 @@ func AddSlacker(sc SlackConfig) (int, string) {
 	}
 
 	// Everything looks good, add the item to the slacker map.  Then delete the request
-    // record from the map.
+	// record from the map.
 	slackers[sc.Key] = sc
-    DeleteRequest(sc.Key)
+	DeleteRequest(sc.Key)
 
 	return http.StatusOK, "New config record added."
 } // func

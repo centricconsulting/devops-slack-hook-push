@@ -86,7 +86,7 @@ func init() {
 	r := martini.NewRouter()
 	r.Post(`/slack`, binding.Json(SlackMessageIn{}), PushToSlack)
 	r.Post(`/slack/config`, binding.Json(SlackConfig{}), AddSlacker)
-    r.Put(`/slack/config/:key_id`, binding.Json(SlackConfig{}), UpdateSlacker)
+	r.Put(`/slack/config/:key_id`, binding.Json(SlackConfig{}), UpdateSlacker)
 	r.Delete(`/slack/config/:key_id`, DeleteSlacker)
 	r.Get(`/slack/configs`, GetSlackerCount)
 	r.Get(`/slack/request/:email`, RequestSlackerId)
@@ -212,16 +212,16 @@ func LoadConfig() bool {
 // ValidateDomain will tell the caller if the specified domain is within the list
 // of domains allowed by the configuration file.
 func ValidateDomain(domain string) bool {
-    for _, item := range appConfig.Domains {
-        if item == domain {
-            return true
-        }
-    }
+	for _, item := range appConfig.Domains {
+		if item == domain {
+			return true
+		}
+	}
 	return false
 } // func
 
 func main() {
-    log.Printf("Starting Spicoli version %s ...", apiv)
+	log.Printf("Starting Spicoli version %s ...", apiv)
 	// Do an initial load of the JSON configuration files.
 	LoadConfig()
 	LoadSlackers()
