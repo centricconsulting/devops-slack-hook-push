@@ -1,3 +1,5 @@
 *.json
 slack-hook-push
 codeship.aes
+.git/
+deploy.sh

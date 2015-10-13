@@ -1,6 +1,7 @@
 FROM golang
 MAINTAINER William J Klos (bill.klos@centricconsulting.com)
 
+# Build the Spicoli server.
 RUN git clone https://github.com/centricconsulting/devops-slack-hook-push.git --branch master /go/src/github.com/centricconsulting/devops-slack-hook-push
 RUN go get github.com/pborman/uuid
 RUN go get github.com/go-martini/martini
