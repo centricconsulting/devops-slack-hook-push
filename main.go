@@ -221,6 +221,7 @@ func ValidateDomain(domain string) bool {
 } // func
 
 func main() {
+    log.Printf("Starting Spicoli version %s ...", apiv)
 	// Do an initial load of the JSON configuration files.
 	LoadConfig()
 	LoadSlackers()
