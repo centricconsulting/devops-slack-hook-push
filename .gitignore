@@ -1,3 +1,3 @@
 *.json
 slack-hook-push
-dockercfg.encrypted
+codeship.aes
