@@ -11,6 +11,3 @@ RUN cd /go/src/github.com/centricconsulting/devops-slack-hook-push; go install
 # Start the Spicoli server.
 WORKDIR /go/src/github.com/centricconsulting/devops-slack-hook-push
 ENTRYPOINT ["devops-slack-hook-push"]
-
-
-https://github.com/centricconsulting/devops-slack-hook-push.git
