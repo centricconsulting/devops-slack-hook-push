@@ -1,4 +1,0 @@
-app:
-  build:
-    image: centric/devops-slack-hook-push
-    dockerfile_path: Dockerfile
