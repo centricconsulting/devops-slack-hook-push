@@ -113,3 +113,4 @@ Refer to the Incoming WebHooks documentation on slack.com for more details on We
 * Honor the "is_active" flag.
 * Honor the "accepting_new_slacks" flag.
 * Add an email confirmation step to the *Request a UUID* process.
+* Setup a logger.

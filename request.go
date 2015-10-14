@@ -99,6 +99,12 @@ func LoadRequests() bool {
 
 // RequestSlackerId
 func RequestSlackerId(params martini.Params) (int, string) {
+	// If we have turned off new slacker requests, enforce it here.  This means that
+	// any requests that have not yet expired will be honored.
+	if !appConfig.AcceptingNewSlackers {
+		return http.StatusBadRequest, "Not currently accepting new slacker requests."
+	}
+
 	// We need an email, otherwise we will ignore the request.
 	email, err := mail.ParseAddress(params["email"])
 	if err != nil {

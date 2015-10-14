@@ -24,6 +24,7 @@ var (
 	configFile                        string
 	err                               error
 	out                               []byte
+	systemKey 							string
 	apiv                              string
 )
 
@@ -51,15 +52,16 @@ type SlackMessageOut struct {
 
 // Some application conifugration settings.
 type Config struct {
-	AcceptingNewSlacks bool     `json:"accepting_new_slacks"`
-	TelemetriURL       string   `json:"telemetri_url"`
+	AcceptingNewSlackers bool     `json:"accepting_new_slackers"`
+	AdminKey           string   `json:"admin_key"`
 	Domains            []string `json:"domains"`
+	TelemetriURL       string   `json:"telemetri_url"`
 }
 
 // init runs before everything else.
 func init() {
 	// Set the API version.
-	apiv = "1.00"
+	apiv = "1.05"
 	// Check credentials to make sure this is a legit request.
 	slackerFile = "slackers.json"
 	requestFile = "requests.json"
@@ -87,6 +89,7 @@ func init() {
 	r.Post(`/slack`, binding.Json(SlackMessageIn{}), PushToSlack)
 	r.Post(`/slack/config`, binding.Json(SlackConfig{}), AddSlacker)
 	r.Put(`/slack/config/:key_id`, binding.Json(SlackConfig{}), UpdateSlacker)
+	r.Put(`/slack/config/:key_id/system`, Authorize, MakeSystemSlacker)
 	r.Delete(`/slack/config/:key_id`, DeleteSlacker)
 	r.Get(`/slack/configs`, GetSlackerCount)
 	r.Get(`/slack/request/:email`, RequestSlackerId)
@@ -96,6 +99,17 @@ func init() {
 	// Add the router action
 	m.Action(r.Handle)
 } // func
+
+// Authorize is a middleware function that provides basic assurances that the
+// request is legit.  It only returns on the negative path because the positive
+// path is a passthrough to whatever action is after this in the route.
+func Authorize(req *http.Request, rsp http.ResponseWriter) {
+	// Make sure this is an admin request.
+	if req.Header.Get("SPICOLI-ADMIN") != appConfig.AdminKey {
+		rsp.WriteHeader(http.StatusUnauthorized)
+	}
+} // func
+
 
 // DepleteInboundList will run through the all of the inbound Slack requests and process them for output.
 // When done they are loaded on the output list.
@@ -135,7 +149,7 @@ func DepleteInboundList() {
 			// to the error channel.
 			if !FillOutboundList(sout) {
 				log.Printf("error: Outbound list is full")
-				// TODO: Send out to error channel.
+				// TODO: Send out to system channel.
 			}
 			log.Printf("%s queued to outbound", doc.Key)
 		} else {
@@ -162,8 +176,7 @@ func DepleteOutboundList() {
 		client := &http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
-			log.Printf("Error when connecting to Slack: %s", err.Error())
-			//return http.StatusBadRequest, "Could not connect to Slack."
+			log.Printf("error: Could not connect to Slack/%s", err.Error())
 		}
 		defer resp.Body.Close()
 		log.Printf("sent to channel %s", doc.Payload.Channel)
@@ -180,7 +193,7 @@ func PingTheApi() (int, string) {
 	return http.StatusOK, "PONG"
 } // func
 
-// LoadConfig
+// LoadConfig will read the configuration file and load the contents into a struct.
 func LoadConfig() bool {
 	// Check credentials to make sure this is a legit request.
 	file, err := os.Open(configFile)
@@ -191,10 +204,6 @@ func LoadConfig() bool {
 		return false
 	}
 	defer file.Close()
-
-	// Allocate memory for the map.  We use this map to lookup configurations
-	// when sending out Slack posts.
-	slackers = make(map[string]SlackConfig)
 
 	// Decode the json into something we can process.  The JSON is set up to load
 	// into a map.  We could also do an array and move it to a map, but why?
