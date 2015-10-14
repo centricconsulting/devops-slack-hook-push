@@ -1,4 +1,3 @@
 *.json
 slack-hook-push
 .git/
-deploy.sh
