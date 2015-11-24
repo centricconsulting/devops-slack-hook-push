@@ -2,7 +2,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/binding"
@@ -24,7 +23,7 @@ var (
 	configFile                        string
 	err                               error
 	out                               []byte
-	systemKey 							string
+	systemKey                         string
 	apiv                              string
 )
 
@@ -53,9 +52,9 @@ type SlackMessageOut struct {
 // Some application conifugration settings.
 type Config struct {
 	AcceptingNewSlackers bool     `json:"accepting_new_slackers"`
-	AdminKey           string   `json:"admin_key"`
-	Domains            []string `json:"domains"`
-	TelemetriURL       string   `json:"telemetri_url"`
+	AdminKey             string   `json:"admin_key"`
+	Domains              []string `json:"domains"`
+	TelemetriURL         string   `json:"telemetri_url"`
 }
 
 // init runs before everything else.
@@ -89,7 +88,7 @@ func init() {
 	r.Post(`/slack`, binding.Json(SlackMessageIn{}), PushToSlack)
 	r.Post(`/slack/config`, binding.Json(SlackConfig{}), AddSlacker)
 	r.Put(`/slack/config/:key_id`, binding.Json(SlackConfig{}), UpdateSlacker)
-	r.Put(`/slack/config/:key_id/system`, Authorize, MakeSystemSlacker)
+	r.Put(`/slack/config/:key_id/system`, AuthorizeAdmin, MakeSystemSlacker)
 	r.Delete(`/slack/config/:key_id`, DeleteSlacker)
 	r.Get(`/slack/configs`, GetSlackerCount)
 	r.Get(`/slack/request/:email`, RequestSlackerId)
@@ -103,84 +102,19 @@ func init() {
 // Authorize is a middleware function that provides basic assurances that the
 // request is legit.  It only returns on the negative path because the positive
 // path is a passthrough to whatever action is after this in the route.
-func Authorize(req *http.Request, rsp http.ResponseWriter) {
+func AuthorizeAdmin(req *http.Request, rsp http.ResponseWriter) {
 	// Make sure this is an admin request.
 	if req.Header.Get("SPICOLI-ADMIN") != appConfig.AdminKey {
 		rsp.WriteHeader(http.StatusUnauthorized)
 	}
 } // func
 
-
-// DepleteInboundList will run through the all of the inbound Slack requests and process them for output.
-// When done they are loaded on the output list.
-func DepleteInboundList() {
-	var sout SlackMessageOut
-
-	z := len(InboundList)
-	for i := 0; i < z; i++ {
-		doc := <-InboundList
-		// We have good parms, so let's make sure the key is good before doing any real work.
-		scfg := GetSlacker(doc.Key)
-		if scfg.Key != "" {
-			// Load up the outbound message for Slack.
-			sout.Payload.UserName = scfg.SlackData.UserName
-			// We will use the Icon URL if it is specified.  If not, use the build it
-			// based on the Action.
-			switch doc.Action {
-			case "info":
-				sout.Payload.IconURL = ICON_INFO
-			case "error":
-				sout.Payload.IconURL = ICON_ERROR
-			case "success":
-				sout.Payload.IconURL = ICON_SUCCESS
-			case "warn":
-				sout.Payload.IconURL = ICON_WARN
-			default:
-				sout.Payload.IconURL = scfg.SlackData.IconURL
-			} // switch
-
-			sout.Hook = scfg.Hook
-			sout.Payload.IconEmoji = scfg.SlackData.IconEmoji
-			sout.Payload.Channel = scfg.SlackData.Channel
-			// Now load up the text.
-			sout.Payload.Text = doc.Text
-
-			// OK, prep for sending out to Slack.  If we can't, send an error
-			// to the error channel.
-			if !FillOutboundList(sout) {
-				log.Printf("error: Outbound list is full")
-				// TODO: Send out to system channel.
-			}
-			log.Printf("%s queued to outbound", doc.Key)
-		} else {
-			log.Printf("error: Could not find key")
-			// TODO: Send an error to the error channel.
-		} // else
-	} // for
-} // func
-
-// DepleteOutboundList will take everything queued from the inbound side and send
-// them out.
-func DepleteOutboundList() {
-	z := len(OutboundList)
-	for i := 0; i < z; i++ {
-		doc := <-OutboundList
-		// Convert to HTTP-needs so we can send the message out.
-		body, err = json.Marshal(doc.Payload)
-		if err != nil {
-			log.Printf("error: Could not marshal payload/%s", err.Error())
-			//return http.StatusBadRequest, "JSON Error"
-		}
-		req, err := http.NewRequest("POST", doc.Hook, bytes.NewBuffer(body))
-
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			log.Printf("error: Could not connect to Slack/%s", err.Error())
-		}
-		defer resp.Body.Close()
-		log.Printf("sent to channel %s", doc.Payload.Channel)
-	} // for
+// 
+func AuthorizeUsr(req *http.Request, rsp http.ResponseWriter) {
+	// Make sure this is an admin request.
+	if req.Header.Get("SPICOLI-USER") != appConfig.AdminKey {
+		rsp.WriteHeader(http.StatusUnauthorized)
+	}
 } // func
 
 // GetSHPApiVersion

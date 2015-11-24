@@ -109,6 +109,7 @@ Refer to the Incoming WebHooks documentation on slack.com for more details on We
 
 ## TO-DO
 
+* Create tests!
 * Add a system slacker that will notify a specific slack channel about various system events (e.g. filled Go channels, new requests, etc.)
 * Honor the "is_active" flag.
 * Add an email confirmation step to the *Request a UUID* process.

@@ -144,7 +144,7 @@ func LoadSlackers() bool {
 
 // MakeSystemSlacker will flip the is_system flag on the specified Slacker to "true".
 // Any other true is_system flag will be set to false.
-func MakeSystemSlacker(params martini.Params) (int,string) {
+func MakeSystemSlacker(params martini.Params) (int, string) {
 	// Make sure it's a good slacker.
 	if !ValidateSlacker(params["key_id"]) {
 		return http.StatusBadRequest, "Slacker does not exist."

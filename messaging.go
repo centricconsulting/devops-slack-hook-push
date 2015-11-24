@@ -1,9 +1,85 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 )
+
+// DepleteInboundList will run through the all of the inbound Slack requests and process them for output.
+// When done they are loaded on the output list.
+func DepleteInboundList() {
+	var sout SlackMessageOut
+
+	z := len(InboundList)
+	for i := 0; i < z; i++ {
+		doc := <-InboundList
+		// We have good parms, so let's make sure the key is good before doing any real work.
+		scfg := GetSlacker(doc.Key)
+		if scfg.Key != "" {
+			// Load up the outbound message for Slack.
+			sout.Payload.UserName = scfg.SlackData.UserName
+			// We will use the Icon URL if it is specified.  If not, use the build it
+			// based on the Action.
+			switch doc.Action {
+			case "info":
+				sout.Payload.IconURL = ICON_INFO
+			case "error":
+				sout.Payload.IconURL = ICON_ERROR
+			case "success":
+				sout.Payload.IconURL = ICON_SUCCESS
+			case "warn":
+				sout.Payload.IconURL = ICON_WARN
+			default:
+				sout.Payload.IconURL = scfg.SlackData.IconURL
+			} // switch
+
+			sout.Hook = scfg.Hook
+			sout.Payload.IconEmoji = scfg.SlackData.IconEmoji
+			sout.Payload.Channel = scfg.SlackData.Channel
+			// Now load up the text.
+			sout.Payload.Text = doc.Text
+
+			// OK, prep for sending out to Slack.  If we can't, send an error
+			// to the error channel.
+			if !FillOutboundList(sout) {
+				log.Printf("error: Outbound list is full")
+				// TODO: Send out to system channel.
+			}
+			log.Printf("%s queued to outbound", doc.Key)
+		} else {
+			log.Printf("error: Could not find key")
+			// TODO: Send an error to the error channel.
+		} // else
+	} // for
+} // func
+
+// DepleteOutboundList will take everything queued from the inbound side and send
+// them out.
+func DepleteOutboundList() {
+	z := len(OutboundList)
+	for i := 0; i < z; i++ {
+		doc := <-OutboundList
+		// Convert to HTTP-needs so we can send the message out.
+		body, err = json.Marshal(doc.Payload)
+		if err != nil {
+			log.Printf("error: Could not marshal payload/%s", err.Error())
+			//return http.StatusBadRequest, "JSON Error"
+		}
+		req, err := http.NewRequest("POST", doc.Hook, bytes.NewBuffer(body))
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Printf("error: Could not connect to Slack/%s", err.Error())
+		}
+		defer resp.Body.Close()
+		log.Printf("sent to channel %s", doc.Payload.Channel)
+	} // for
+} // func
+
 
 // Functions for reading and pushing notifications for the inbound Slack requests.
 func GetInboundNotifier() chan bool {
